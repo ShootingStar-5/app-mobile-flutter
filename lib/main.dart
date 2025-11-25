@@ -1,0 +1,116 @@
+import 'dart:async';
+import 'package:alarm/alarm.dart';
+import 'package:flutter/material.dart';
+import 'package:yakkkobak_flutter/screens/home_screen.dart';
+import 'package:yakkkobak_flutter/utils/theme.dart';
+
+import 'package:yakkkobak_flutter/screens/splash_screen.dart';
+import 'package:yakkkobak_flutter/screens/camera_screen.dart';
+import 'package:yakkkobak_flutter/screens/voice_screen.dart';
+import 'package:yakkkobak_flutter/screens/alarm_screen.dart';
+import 'package:yakkkobak_flutter/screens/alarm_ringing_screen.dart';
+
+import 'package:yakkkobak_flutter/services/notification_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().initialize();
+  runApp(const YakKkobakApp());
+}
+
+class YakKkobakApp extends StatefulWidget {
+  const YakKkobakApp({super.key});
+
+  @override
+  State<YakKkobakApp> createState() => _YakKkobakAppState();
+}
+
+class _YakKkobakAppState extends State<YakKkobakApp> {
+  static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    print('YakKkobakApp: initState');
+    _subscription = NotificationService().ringStream.listen((event) async {
+      print(
+        'YakKkobakApp: Alarm ringing event received: $event (${event.runtimeType})',
+      );
+
+      AlarmSettings? alarmSettings;
+
+      if (event is AlarmSettings) {
+        alarmSettings = event;
+      } else {
+        // AlarmSet 등 다른 타입일 경우 처리 (id가 있다고 가정하거나 toString으로 확인)
+        // dynamic으로 id 접근 시도
+        try {
+          final id = (event as dynamic).id;
+          if (id is int) {
+            alarmSettings = await NotificationService().getAlarm(id);
+          }
+        } catch (e) {
+          print('YakKkobakApp: Error extracting id from event: $e');
+        }
+      }
+
+      if (alarmSettings != null) {
+        print(
+          'YakKkobakApp: Navigating to ringing screen with alarm: ${alarmSettings.id}',
+        );
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) =>
+                AlarmRingingScreen(alarmSettings: alarmSettings!),
+          ),
+        );
+      } else {
+        print('YakKkobakApp: Could not resolve AlarmSettings from event');
+      }
+    });
+
+    // 앱 시작 시 이미 울리고 있는 알람이 있는지 확인 (앱이 종료되었다가 다시 켜진 경우)
+    _checkRingingAlarm();
+  }
+
+  Future<void> _checkRingingAlarm() async {
+    final ringingId = await NotificationService().getRingingAlarmId();
+    if (ringingId != null) {
+      print('YakKkobakApp: Found ringing alarm id: $ringingId');
+      final alarmSettings = await NotificationService().getAlarm(ringingId);
+      if (alarmSettings != null) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) =>
+                AlarmRingingScreen(alarmSettings: alarmSettings),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      title: '찰칵! 약알림',
+      theme: AppTheme.lightTheme,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/camera': (context) => const CameraScreen(),
+        '/voice': (context) => const VoiceScreen(),
+        '/alarms': (context) => const AlarmScreen(),
+      },
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}

@@ -1,20 +1,24 @@
 # -------------------------
-# 🖥 운영체제(OS) 불필요 파일 무시
+# 🖥 운영체제(OS) 및 공통
 # -------------------------
-.DS_Store       # macOS 자동생성 파일
-Thumbs.db       # Windows 미리보기 캐시 파일
+.DS_Store		# macOS 자동생성 파일
+Thumbs.db		# Windows 미리보기 캐시 파일
+.svn/			# Subversion
+.history		# 로컬 히스토리 폴더
+.spotlight-V100
+.Trashes
+ehthumbs.db
 
 # -------------------------
 # 🔑 환경 설정 및 보안 정보
 # -------------------------
-.env            # API Key, DB 정보 등 포함 - 절대 업로드 금지
-.env.*          # 다양한 env 파일 패턴 포함
-*.log           # 로그 파일
+.env			# API Key, DB 정보 등 포함 - 절대 업로드 금지
+.env.*			# 다양한 env 파일 패턴 포함
+*.log			# 로그 파일
 
 # -------------------------
 # 🐍 Python (FastAPI) 관련
 # -------------------------
-
 # 파이썬 바이트코드 / 빌드 캐시
 __pycache__/
 *.py[cod]
@@ -33,58 +37,93 @@ dist/
 .eggs/
 .wheels/
 
-# SQLite 등 개발용 데이터베이스 파일 (공유 불필요)
+# SQLite 등 데이터베이스 파일 (공유 불필요)
 *.sqlite
 *.sqlite3
 
-# 테스트 / 커버리지 파일
+# 테스트 / 커버리지
 .coverage
 htmlcov/
 .tox/
 pytest_cache/
 coverage.xml
 
-# IDE/에디터 자동 생성 파일
-.idea/          # JetBrains (PyCharm)
-.vscode/        # VSCode
-*.swp           # Vim 임시파일
+# -------------------------
+# 🛠 IDE / 에디터 관련 (통합)
+# -------------------------
+.idea/			# JetBrains (IntelliJ, PyCharm, Android Studio)
+*.iml
+*.ipr
+*.iws
+.vscode/		# VSCode
+*.swp			# Vim 임시파일
+.atom/		# Atom 에디터
 
 # -------------------------
-# 📱 Flutter 프로젝트 관련
+# 📱 Flutter / Dart 관련
 # -------------------------
-
-# Flutter 빌드 결과물 (공유 불필요)
-build/
+# 빌드 결과물 및 도구
 .dart_tool/
 .packages
+.pub-cache/
+.pub/
+/build/
+.build/         # 기타 빌드 폴더
+.buildlog/
 
-# Flutter 플러그인 관련 자동 생성 파일
+# 문서 및 의존성
+**/doc/api/
 .flutter-plugins
 .flutter-plugins-dependencies
 generated_plugin_registrant.dart
+# pubspec.lock  # 팀 정책에 따라 선택 (패키지 버전 고정 원하면 주석 해제)
 
-# pubspec.lock는 팀 상황에 따라 선택 (패키지 버전 고정 원하면 포함)
-pubspec.lock
+# 테스트 커버리지 (Flutter)
+/coverage/
 
-# iOS / Android 빌드 결과물 (자동 생성됨)
-ios/Pods/
-ios/.symlinks/
-ios/build/
-ios/.generated/
+# 난독화(Obfuscation) 맵 파일
+app.*.map.json
+
+# -------------------------
+# 🤖 Android (Native & Flutter)
+# -------------------------
+# Gradle 및 빌드
 android/.gradle/
 android/build/
 android/app/build/
 
-# 크래시 로그 / 심볼 파일
+# Android Studio 빌드 아티팩트 (추가됨)
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# -------------------------
+# 🍎 iOS (Native & Flutter)
+# -------------------------
+ios/Pods/
+ios/.symlinks/
+ios/build/
+ios/.generated/
+**/ios/Flutter/.last_build_id
+
+# Swift Package Manager
+.swiftpm/
+
+# -------------------------
+# 📦 기타 / 마이그레이션 / 심볼
+# -------------------------
+# JS (선택)
+node_modules/
+
+# Docker (선택)
+docker-volume/
+
+# 심볼 파일 및 락 파일
 *.symbols
 *.lock
 
-# -------------------------
-# 📦 JS 환경을 사용한다면 (선택)
-# -------------------------
-node_modules/   # JS 패키지가 있을 경우 자동 생성됨
+# Java/Kotlin 클래스 파일 (일반)
+*.class
 
-# -------------------------
-# 🐳 Docker (선택)
-# -------------------------
-docker-volume/   # 로컬 볼륨 데이터 무시
+# 마이그레이션 임시 폴더
+migrate_working_dir/
