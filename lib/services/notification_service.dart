@@ -94,7 +94,7 @@ class NotificationService {
     final alarmSettings = AlarmSettings(
       id: id,
       dateTime: scheduledDate,
-      assetAudioPath: 'assets/alarm.wav',
+      assetAudioPath: 'assets/schumann.mp3',
       loopAudio: true,
       vibrate: true,
       androidFullScreenIntent: true,

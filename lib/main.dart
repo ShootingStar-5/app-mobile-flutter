@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
-import 'package:yakkkobak_flutter/screens/home_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:yakkkobak_flutter/screens/main_shell.dart';
 import 'package:yakkkobak_flutter/utils/theme.dart';
 
 import 'package:yakkkobak_flutter/screens/splash_screen.dart';
@@ -14,6 +15,7 @@ import 'package:yakkkobak_flutter/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ko_KR', null);
   await NotificationService().initialize();
   runApp(const YakKkobakApp());
 }
@@ -105,7 +107,7 @@ class _YakKkobakAppState extends State<YakKkobakApp> {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainShell(),
         '/camera': (context) => const CameraScreen(),
         '/voice': (context) => const VoiceScreen(),
         '/alarms': (context) => const AlarmScreen(),
