@@ -2,16 +2,16 @@ import 'dart:async';
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:yakkkobak_flutter/screens/main_shell.dart';
-import 'package:yakkkobak_flutter/utils/theme.dart';
+import 'package:yakkobak_flutter/screens/main_shell.dart';
+import 'package:yakkobak_flutter/utils/theme.dart';
 
-import 'package:yakkkobak_flutter/screens/splash_screen.dart';
-import 'package:yakkkobak_flutter/screens/camera_screen.dart';
-import 'package:yakkkobak_flutter/screens/voice_screen.dart';
-import 'package:yakkkobak_flutter/screens/alarm_screen.dart';
-import 'package:yakkkobak_flutter/screens/alarm_ringing_screen.dart';
+import 'package:yakkobak_flutter/screens/splash_screen.dart';
+import 'package:yakkobak_flutter/screens/camera_screen.dart';
+import 'package:yakkobak_flutter/screens/voice_screen.dart';
+import 'package:yakkobak_flutter/screens/alarm_screen.dart';
+import 'package:yakkobak_flutter/screens/alarm_ringing_screen.dart';
 
-import 'package:yakkkobak_flutter/services/notification_service.dart';
+import 'package:yakkobak_flutter/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,16 +44,18 @@ class _YakKkobakAppState extends State<YakKkobakApp> {
 
       if (event is AlarmSettings) {
         alarmSettings = event;
+      } else if (event is Iterable && event.isNotEmpty) {
+        // If event is a list/set of alarms (AlarmSet might be iterable)
+        alarmSettings = event.first;
       } else {
-        // AlarmSet 등 다른 타입일 경우 처리 (id가 있다고 가정하거나 toString으로 확인)
-        // dynamic으로 id 접근 시도
+        // AlarmSet might be a wrapper class
         try {
-          final id = (event as dynamic).id;
-          if (id is int) {
-            alarmSettings = await NotificationService().getAlarm(id);
+          final alarms = (event as dynamic).alarms;
+          if (alarms is Iterable && alarms.isNotEmpty) {
+            alarmSettings = alarms.first;
           }
         } catch (e) {
-          print('YakKkobakApp: Error extracting id from event: $e');
+          print('YakKkobakApp: Error extracting alarm from event: $e');
         }
       }
 
