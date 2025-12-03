@@ -6,14 +6,17 @@ class MedicationExtractService {
   // TODO: 실제 서버 IP로 변경하세요
   // 에뮬레이터: 10.0.2.2:8000
   // 실제 기기: 컴퓨터의 로컬 IP (예: 192.168.x.x:8000)
-  static const String baseUrl = 'http://172.16.30.30:8000';
+  // USB 포트 포워딩: localhost:8000 (adb reverse 사용)
+  static const String baseUrl = 'http://localhost:8000';
 
   /// 음성 파일에서 약 정보 추출
   Future<MedicationExtractResult> extractFromVoice(String wavFilePath) async {
     try {
       final uri = Uri.parse('$baseUrl/api/extract/voice');
       var request = http.MultipartRequest('POST', uri);
-      request.files.add(await http.MultipartFile.fromPath('audio', wavFilePath));
+      request.files.add(
+        await http.MultipartFile.fromPath('audio', wavFilePath),
+      );
 
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
