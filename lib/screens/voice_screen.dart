@@ -6,6 +6,7 @@ import 'dart:io';
 
 import '../services/medication_extract_service.dart';
 import '../models/medication_data.dart';
+import '../utils/theme.dart';
 import 'alarm_edit_screen.dart';
 
 class VoiceScreen extends StatefulWidget {
@@ -153,62 +154,172 @@ class _VoiceScreenState extends State<VoiceScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('말로 등록하기')),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isLandscape = constraints.maxWidth > constraints.maxHeight;
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(isLandscape ? 16 : 24),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _statusText,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displayMedium,
-                  ),
-                  const SizedBox(height: 60),
-                  GestureDetector(
-                    onTap: _isProcessing ? null : _toggleRecording,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: _isListening ? 180 : 150,
-                      height: _isListening ? 180 : 150,
-                      decoration: BoxDecoration(
-                        color: _isProcessing
-                            ? Colors.grey
-                            : (_isListening ? Colors.red : Colors.blue),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isProcessing
-                                    ? Colors.grey
-                                    : (_isListening ? Colors.red : Colors.blue))
-                                .withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: _isProcessing
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Icon(
-                              _isListening ? Icons.stop : Icons.mic_none,
-                              size: 80,
-                              color: Colors.white,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  if (!_isListening && !_isProcessing)
-                    const Text(
-                      '예시: "1일 3회, 4일분, 식후 30분"',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
+                  SizedBox(height: isLandscape ? 10 : 20),
+
+                  // Status Card
+                  _buildStatusCard(),
+                  SizedBox(height: isLandscape ? 20 : 40),
+
+                  // Mic Button
+                  _buildMicButton(isLandscape: isLandscape),
+                  SizedBox(height: isLandscape ? 20 : 40),
+
+                  // Example Phrases
+                  if (!_isListening && !_isProcessing) _buildExamplePhrases(),
                 ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        color: _isListening
+            ? AppColors.primary.withValues(alpha: 0.2)
+            : (_isProcessing
+                ? AppColors.secondaryLight.withValues(alpha: 0.1)
+                : Colors.white),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _isListening
+              ? AppColors.primary
+              : (_isProcessing ? AppColors.secondaryLight : AppColors.primaryLight),
+          width: 2,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_isListening)
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+            ),
+          if (_isProcessing)
+            Container(
+              width: 24,
+              height: 24,
+              margin: const EdgeInsets.only(right: 12),
+              child: const CircularProgressIndicator(
+                strokeWidth: 3,
+                color: AppColors.secondary,
+              ),
+            ),
+          Flexible(
+            child: Text(
+              _statusText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _isListening ? AppColors.secondary : AppColors.textPrimary,
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMicButton({bool isLandscape = false}) {
+    final Color buttonColor = _isProcessing
+        ? AppColors.textLight
+        : (_isListening ? AppColors.error : AppColors.primary);
+
+    final double baseSize = isLandscape ? 100 : 140;
+    final double activeSize = isLandscape ? 110 : 160;
+
+    return GestureDetector(
+      onTap: _isProcessing ? null : _toggleRecording,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: _isListening ? activeSize : baseSize,
+        height: _isListening ? activeSize : baseSize,
+        decoration: BoxDecoration(
+          color: buttonColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: buttonColor.withValues(alpha: 0.4),
+              blurRadius: _isListening ? 30 : 20,
+              spreadRadius: _isListening ? 8 : 4,
+            ),
+          ],
+        ),
+        child: Icon(
+          _isListening ? Icons.stop_rounded : Icons.mic,
+          size: 70,
+          color: _isListening ? Colors.white : AppColors.secondary,
         ),
       ),
+    );
+  }
+
+  Widget _buildExamplePhrases() {
+    final examples = [
+      '"1일 3회, 4일분, 식후 30분"',
+      '"하루에 두 번, 아침 저녁으로"',
+      '"타이레놀, 하루 세 번, 일주일"',
+    ];
+
+    return Column(
+      children: [
+        const Text(
+          '이렇게 말해보세요',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...examples.map((example) => Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.format_quote,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  example,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )),
+      ],
     );
   }
 }
