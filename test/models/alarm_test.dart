@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yakkkobak_flutter/models/alarm.dart';
+import 'package:yakkobak_flutter/models/alarm.dart';
 
 void main() {
   group('Alarm Model Tests', () {

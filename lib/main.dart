@@ -5,6 +5,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/main_shell.dart';
 import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/initial_setup_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/voice_screen.dart';
 import 'screens/alarm_screen.dart';
@@ -107,6 +109,8 @@ class _YakKkobakAppState extends State<YakKkobakApp> {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/initial-setup': (context) => const InitialSetupScreen(),
         '/home': (context) => const MainShell(),
         '/camera': (context) => const CameraScreen(),
         '/voice': (context) => const VoiceScreen(),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Primary colors
@@ -42,36 +41,39 @@ class AppTheme {
       onError: Colors.white,
     ),
     scaffoldBackgroundColor: AppColors.background,
-    textTheme: GoogleFonts.notoSansKrTextTheme().copyWith(
-      displayLarge: const TextStyle(
+    fontFamily: 'SUITE',
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(
         fontSize: 32,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      displayMedium: const TextStyle(
+      displayMedium: TextStyle(
         fontSize: 28,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      headlineLarge: const TextStyle(
+      headlineLarge: TextStyle(
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      headlineMedium: const TextStyle(
+      headlineMedium: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
-      bodyLarge: const TextStyle(
+      bodyLarge: TextStyle(
         fontSize: 20,
+        fontWeight: FontWeight.w400,
         color: AppColors.textPrimary,
       ),
-      bodyMedium: const TextStyle(
+      bodyMedium: TextStyle(
         fontSize: 18,
+        fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
       ),
-      labelLarge: const TextStyle(
+      labelLarge: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
@@ -84,8 +86,9 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
+        fontFamily: 'SUITE',
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
     ),
