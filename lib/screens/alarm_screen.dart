@@ -92,16 +92,26 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('알람 삭제'),
-        content: Text('${alarm.label} 알람을 삭제하시겠습니까?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '지우시겠습니까?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('${alarm.label} 알람을 삭제합니다.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: const Text(
+              '아니오',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              '네',
+              style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -180,18 +190,25 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
                     return await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('알람 삭제'),
-                        content: Text('${alarm.label} 알람을 삭제하시겠습니까?'),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: const Text(
+                          '지우시겠습니까?',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        content: Text('${alarm.label} 알람을 삭제합니다.'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('취소'),
+                            child: const Text(
+                              '아니오',
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
                             child: const Text(
-                              '삭제',
-                              style: TextStyle(color: Colors.red),
+                              '네',
+                              style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -234,29 +251,53 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        alarm.timeString,
-                                        style: TextStyle(
-                                          fontSize: 32,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.edit,
-                                        size: 20,
-                                        color: Colors.grey,
-                                      ),
-                                    ],
+                                  Text(
+                                    alarm.timeString,
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
+                            // Edit button (bigger)
+                            GestureDetector(
+                              onTap: () => _editTime(alarm),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.grey,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Delete button (smaller)
+                            GestureDetector(
+                              onTap: () => _deleteAlarm(alarm),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
                             Transform.scale(
                               scale: 1.5,
                               child: Switch(

@@ -212,6 +212,87 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return '$period $displayHour:$minute';
   }
 
+  Future<void> _editAlarmTime(Alarm alarm) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: alarm.time,
+      helpText: '${alarm.label} 시간 설정',
+      cancelText: '취소',
+      confirmText: '확인',
+    );
+
+    if (picked != null && picked != alarm.time) {
+      alarm.time = picked;
+      await _storageService.updateAlarm(alarm);
+
+      // 알람 재스케줄링
+      if (alarm.isActive) {
+        await NotificationService().scheduleAlarm(
+          id: alarm.id,
+          title: '약 드실 시간입니다!',
+          body: '${alarm.label}을(를) 복용해주세요.',
+          time: alarm.time,
+        );
+      }
+
+      await _loadAlarms();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 시간이 변경되었습니다.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAlarm(Alarm alarm) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '지우시겠습니까?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('${alarm.label} 알람을 삭제합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '아니오',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '네',
+              style: TextStyle(color: AppColors.error, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await NotificationService().cancelAlarm(alarm.id);
+      await _storageService.deleteAlarm(alarm.id);
+      await _loadAlarms();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 알람이 삭제되었습니다.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = DateFormat('M월 d일 EEEE', 'ko_KR').format(DateTime.now());
@@ -318,13 +399,23 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            TextButton(
-              onPressed: () => Navigator.pushNamed(context, '/alarms'),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/alarms').then((_) => _loadAlarms());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text(
-                '전체 보기',
+                '알람 전체 보기',
                 style: TextStyle(
-                  color: AppColors.secondary,
-                  fontSize: 16,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -440,6 +531,40 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
           ),
+          // Edit button (bigger)
+          GestureDetector(
+            onTap: () => _editAlarmTime(alarm),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.edit,
+                color: AppColors.secondary,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Delete button (smaller)
+          GestureDetector(
+            onTap: () => _deleteAlarm(alarm),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(

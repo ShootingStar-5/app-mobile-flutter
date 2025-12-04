@@ -18,10 +18,11 @@ class _MainShellState extends State<MainShell> {
   late int _currentIndex;
   late PageController _pageController;
   final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<CalendarScreenState> _calendarScreenKey = GlobalKey<CalendarScreenState>();
 
   List<Widget> get _screens => [
     HomeScreen(key: _homeScreenKey, onNavigateToFaq: () => _onTabSelected(2)),
-    const CalendarScreen(),
+    CalendarScreen(key: _calendarScreenKey),
     const HealthFaqScreen(),
     const SettingsScreen(),
   ];
@@ -45,9 +46,11 @@ class _MainShellState extends State<MainShell> {
     });
     _pageController.jumpToPage(index);
 
-    // Refresh HomeScreen alarms when switching to home tab
+    // Refresh screens when switching tabs
     if (index == 0) {
       _homeScreenKey.currentState?.refreshAlarms();
+    } else if (index == 1) {
+      _calendarScreenKey.currentState?.refreshAlarms();
     }
   }
 
