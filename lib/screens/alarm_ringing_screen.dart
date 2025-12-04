@@ -1,8 +1,8 @@
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:yakkkobak_flutter/services/notification_service.dart';
-import 'package:yakkkobak_flutter/utils/theme.dart';
+import 'package:yakkobak_flutter/services/notification_service.dart';
+import 'package:yakkobak_flutter/utils/theme.dart';
 
 class AlarmRingingScreen extends StatefulWidget {
   final AlarmSettings alarmSettings;

@@ -32,8 +32,17 @@ class NotificationService {
       int? id;
       if (event is AlarmSettings) {
         id = event.id;
+      } else if (event is Iterable && event.isNotEmpty) {
+        id = event.first.id;
       } else {
-        id = (event as dynamic).id;
+        try {
+          final alarms = (event as dynamic).alarms;
+          if (alarms is Iterable && alarms.isNotEmpty) {
+            id = alarms.first.id;
+          }
+        } catch (e) {
+          print('NotificationService: Error extracting id from event: $e');
+        }
       }
 
       if (id != null) {
@@ -55,20 +64,26 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
-    }
-    // Android 12+ 정확한 알람 스케줄링 권한
-    if (await Permission.scheduleExactAlarm.isDenied) {
-      await Permission.scheduleExactAlarm.request();
-    }
-    // 다른 앱 위에 그리기 권한 (전체 화면 알람을 위해 필요할 수 있음)
-    if (await Permission.systemAlertWindow.isDenied) {
-      await Permission.systemAlertWindow.request();
-    }
-    // 배터리 최적화 무시 요청 (알람이 제때 울리도록)
-    if (await Permission.ignoreBatteryOptimizations.isDenied) {
-      await Permission.ignoreBatteryOptimizations.request();
+    // 웹 플랫폼에서는 알람 권한이 지원되지 않으므로 건너뜀
+    try {
+      if (await Permission.notification.isDenied) {
+        await Permission.notification.request();
+      }
+      // Android 12+ 정확한 알람 스케줄링 권한
+      if (await Permission.scheduleExactAlarm.isDenied) {
+        await Permission.scheduleExactAlarm.request();
+      }
+      // 다른 앱 위에 그리기 권한 (전체 화면 알람을 위해 필요할 수 있음)
+      if (await Permission.systemAlertWindow.isDenied) {
+        await Permission.systemAlertWindow.request();
+      }
+      // 배터리 최적화 무시 요청 (알람이 제때 울리도록)
+      if (await Permission.ignoreBatteryOptimizations.isDenied) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (e) {
+      // 웹 등 지원하지 않는 플랫폼에서는 무시
+      print('Permission request not supported on this platform: $e');
     }
   }
 

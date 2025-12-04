@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:yakkkobak_flutter/models/alarm.dart';
-import 'package:yakkkobak_flutter/services/notification_service.dart';
-import 'package:yakkkobak_flutter/services/alarm_storage_service.dart';
+import 'package:yakkobak_flutter/models/alarm.dart';
+import 'package:yakkobak_flutter/services/notification_service.dart';
+import 'package:yakkobak_flutter/services/alarm_storage_service.dart';
 
 class AlarmScreen extends StatefulWidget {
   const AlarmScreen({super.key});
@@ -53,9 +53,9 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('알람 불러오기 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('알람 불러오기 실패: $e')));
       }
     }
   }
@@ -114,9 +114,9 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
         _alarms.removeWhere((a) => a.id == alarm.id);
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${alarm.label} 알람이 삭제되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${alarm.label} 알람이 삭제되었습니다.')));
       }
     }
   }
@@ -147,134 +147,138 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('내 약 알람'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadAlarms,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadAlarms),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _alarms.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _alarms.length,
-                  itemBuilder: (context, index) {
-                    final alarm = _alarms[index];
-                    return Dismissible(
-                      key: Key('alarm_${alarm.id}'),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                      confirmDismiss: (direction) async {
-                        return await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('알람 삭제'),
-                            content: Text('${alarm.label} 알람을 삭제하시겠습니까?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('취소'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('삭제', style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+          ? _buildEmptyState()
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _alarms.length,
+              itemBuilder: (context, index) {
+                final alarm = _alarms[index];
+                return Dismissible(
+                  key: Key('alarm_${alarm.id}'),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  confirmDismiss: (direction) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('알람 삭제'),
+                        content: Text('${alarm.label} 알람을 삭제하시겠습니까?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('취소'),
                           ),
-                        );
-                      },
-                      onDismissed: (direction) async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        await NotificationService().cancelAlarm(alarm.id);
-                        await _storageService.deleteAlarm(alarm.id);
-                        setState(() {
-                          _alarms.removeAt(index);
-                        });
-                        messenger.showSnackBar(
-                          SnackBar(content: Text('${alarm.label} 알람이 삭제되었습니다.')),
-                        );
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: InkWell(
-                          onTap: () => _editTime(alarm),
-                          onLongPress: () => _deleteAlarm(alarm),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        alarm.label,
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            alarm.timeString,
-                                            style: TextStyle(
-                                              fontSize: 32,
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Icon(
-                                            Icons.edit,
-                                            size: 20,
-                                            color: Colors.grey,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Transform.scale(
-                                  scale: 1.5,
-                                  child: Switch(
-                                    value: alarm.isActive,
-                                    onChanged: (value) {
-                                      alarm.isActive = value;
-                                      _updateAlarm(alarm);
-                                    },
-                                    activeTrackColor: Theme.of(context).colorScheme.primary,
-                                    activeThumbColor: Colors.white,
-                                  ),
-                                ),
-                              ],
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text(
+                              '삭제',
+                              style: TextStyle(color: Colors.red),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },
-                ),
+                  onDismissed: (direction) async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await NotificationService().cancelAlarm(alarm.id);
+                    await _storageService.deleteAlarm(alarm.id);
+                    setState(() {
+                      _alarms.removeAt(index);
+                    });
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('${alarm.label} 알람이 삭제되었습니다.')),
+                    );
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: InkWell(
+                      onTap: () => _editTime(alarm),
+                      onLongPress: () => _deleteAlarm(alarm),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    alarm.label,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        alarm.timeString,
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.edit,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Transform.scale(
+                              scale: 1.5,
+                              child: Switch(
+                                value: alarm.isActive,
+                                onChanged: (value) {
+                                  alarm.isActive = value;
+                                  _updateAlarm(alarm);
+                                },
+                                activeTrackColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                activeThumbColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton.large(
         onPressed: () {
           Navigator.pushNamed(context, '/voice').then((_) => _loadAlarms());
@@ -289,11 +293,7 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.alarm_off,
-            size: 100,
-            color: Colors.grey.shade300,
-          ),
+          Icon(Icons.alarm_off, size: 100, color: Colors.grey.shade300),
           const SizedBox(height: 24),
           Text(
             '등록된 알람이 없습니다',
@@ -307,10 +307,7 @@ class _AlarmScreenState extends State<AlarmScreen> with WidgetsBindingObserver {
           Text(
             '마이크 버튼을 눌러\n음성으로 약 알람을 등록해보세요',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade400,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade400),
           ),
         ],
       ),
