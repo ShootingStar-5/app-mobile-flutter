@@ -17,9 +17,10 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late int _currentIndex;
   late PageController _pageController;
+  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
 
   List<Widget> get _screens => [
-    HomeScreen(onNavigateToFaq: () => _onTabSelected(2)),
+    HomeScreen(key: _homeScreenKey, onNavigateToFaq: () => _onTabSelected(2)),
     const CalendarScreen(),
     const HealthFaqScreen(),
     const SettingsScreen(),
@@ -43,6 +44,11 @@ class _MainShellState extends State<MainShell> {
       _currentIndex = index;
     });
     _pageController.jumpToPage(index);
+
+    // Refresh HomeScreen alarms when switching to home tab
+    if (index == 0) {
+      _homeScreenKey.currentState?.refreshAlarms();
+    }
   }
 
   @override

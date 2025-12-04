@@ -65,19 +65,59 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   bool _hasAlarms(DateTime day) {
-    // 해당 날짜에 활성화된 알람이 있는지 확인
-    return _alarms.any((alarm) => alarm.isActiveOnDate(day));
+    // 해당 날짜에 알람이 있는지 확인 (활성 여부 상관없이 날짜 범위로)
+    return _alarms.any((alarm) => _isAlarmOnDate(alarm, day));
+  }
+
+  // 알람이 특정 날짜에 해당하는지 확인 (활성 여부 무시)
+  bool _isAlarmOnDate(Alarm alarm, DateTime date) {
+    final startOnly = DateTime(alarm.startDate.year, alarm.startDate.month, alarm.startDate.day);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final endDate = startOnly.add(Duration(days: alarm.durationDays));
+    return !dateOnly.isBefore(startOnly) && dateOnly.isBefore(endDate);
   }
 
   List<Alarm> _getAlarmsForDay(DateTime day) {
-    // 선택된 날짜에 활성화된 알람 목록 반환
-    return _alarms.where((alarm) => alarm.isActiveOnDate(day)).toList();
+    // 선택된 날짜에 해당하는 알람 목록 반환 (활성 여부 무시)
+    return _alarms.where((alarm) => _isAlarmOnDate(alarm, day)).toList();
   }
 
-  Future<void> _toggleAlarm(Alarm alarm) async {
-    alarm.isActive = !alarm.isActive;
-    await _storageService.updateAlarm(alarm);
-    await _loadAlarms();
+  Future<void> _editAlarmTime(Alarm alarm) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: alarm.time,
+      helpText: '${alarm.label} 시간 설정',
+      cancelText: '취소',
+      confirmText: '확인',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.secondary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != alarm.time) {
+      alarm.time = picked;
+      await _storageService.updateAlarm(alarm);
+      await _loadAlarms();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 시간이 변경되었습니다.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -315,7 +355,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (alarmsForDay.isEmpty)
           _buildEmptyState()
         else
-          ...alarmsForDay.map((alarm) => _buildAlarmCard(alarm, onToggle: () => _toggleAlarm(alarm))),
+          ...alarmsForDay.map((alarm) => _buildAlarmCard(alarm, onEdit: () => _editAlarmTime(alarm))),
       ],
     );
   }
@@ -357,7 +397,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildAlarmCard(Alarm alarm, {VoidCallback? onToggle}) {
+  Widget _buildAlarmCard(Alarm alarm, {VoidCallback? onEdit}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -440,20 +480,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
 
-          // 알람 켜기/끄기 토글 버튼
+          // 알람 시간 수정 버튼
           GestureDetector(
-            onTap: onToggle,
+            onTap: onEdit,
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: alarm.isActive
-                    ? AppColors.success.withValues(alpha: 0.2)
-                    : AppColors.textLight.withValues(alpha: 0.2),
+                color: AppColors.secondary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
-                color: alarm.isActive ? AppColors.success : AppColors.textLight,
+              child: const Icon(
+                Icons.edit,
+                color: AppColors.secondary,
                 size: 28,
               ),
             ),
