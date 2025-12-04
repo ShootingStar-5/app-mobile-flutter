@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/theme.dart';
 import '../models/alarm.dart';
+import '../models/medication_data.dart';
 import '../services/alarm_storage_service.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToFaq;
@@ -55,6 +58,121 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return '좋은 아침이에요!';
     if (hour < 18) return '좋은 오후예요!';
     return '좋은 저녁이에요!';
+  }
+
+  /// 카메라 화면으로 이동하고 결과 처리
+  Future<void> _navigateToCamera() async {
+    final result = await Navigator.pushNamed(context, '/camera');
+    if (result != null && result is MedicationData) {
+      await _createAlarmsFromMedication(result);
+    }
+  }
+
+  /// 음성 화면으로 이동하고 결과 처리
+  Future<void> _navigateToVoice() async {
+    final result = await Navigator.pushNamed(context, '/voice');
+    if (result != null && result is MedicationData) {
+      await _createAlarmsFromMedication(result);
+    }
+  }
+
+  /// MedicationData를 기반으로 알람 생성
+  Future<void> _createAlarmsFromMedication(MedicationData data) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // 설정에서 식사 시간 가져오기
+    final breakfastTime = TimeOfDay(
+      hour: prefs.getInt('breakfast_hour') ?? 8,
+      minute: prefs.getInt('breakfast_minute') ?? 0,
+    );
+    final lunchTime = TimeOfDay(
+      hour: prefs.getInt('lunch_hour') ?? 12,
+      minute: prefs.getInt('lunch_minute') ?? 30,
+    );
+    final dinnerTime = TimeOfDay(
+      hour: prefs.getInt('dinner_hour') ?? 18,
+      minute: prefs.getInt('dinner_minute') ?? 30,
+    );
+
+    // 식사 기준 오프셋 계산 (분)
+    int offsetMinutes = data.specificOffsetMinutes ?? 30;
+    if (data.mealContext == 'pre_meal') {
+      offsetMinutes = -offsetMinutes.abs();
+    } else if (data.mealContext == 'post_meal') {
+      offsetMinutes = offsetMinutes.abs();
+    } else {
+      offsetMinutes = 0; // at_bedtime 또는 기타
+    }
+
+    // 복용 횟수에 따라 알람 시간 결정
+    List<TimeOfDay> mealTimes = [];
+    final frequency = data.dailyFrequency ?? 1;
+
+    if (frequency >= 1) mealTimes.add(breakfastTime);
+    if (frequency >= 2) mealTimes.add(lunchTime);
+    if (frequency >= 3) mealTimes.add(dinnerTime);
+
+    // 기존 알람 로드
+    final existingAlarms = await _storageService.loadAlarms();
+    int nextId = existingAlarms.isEmpty
+        ? 1
+        : existingAlarms.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1;
+
+    final mealNames = ['아침', '점심', '저녁'];
+    final mealContextKorean = data.getMealContextKorean();
+    final medicationName = data.medicationName ?? '약';
+
+    List<Alarm> newAlarms = [];
+
+    for (int i = 0; i < mealTimes.length; i++) {
+      final mealTime = mealTimes[i];
+
+      // 오프셋 적용
+      int totalMinutes = mealTime.hour * 60 + mealTime.minute + offsetMinutes;
+      if (totalMinutes < 0) totalMinutes += 24 * 60;
+      if (totalMinutes >= 24 * 60) totalMinutes -= 24 * 60;
+
+      final alarmTime = TimeOfDay(
+        hour: totalMinutes ~/ 60,
+        minute: totalMinutes % 60,
+      );
+
+      final alarm = Alarm(
+        id: nextId + i,
+        label: '$medicationName (${mealNames[i]} $mealContextKorean)',
+        time: alarmTime,
+        isActive: true,
+        startDate: DateTime.now(),
+        durationDays: data.totalDurationDays ?? 7,
+      );
+
+      newAlarms.add(alarm);
+
+      // 알림 스케줄링
+      await NotificationService().scheduleAlarm(
+        id: alarm.id,
+        title: '약 복용 시간',
+        body: alarm.label,
+        time: alarmTime,
+      );
+    }
+
+    // 알람 저장
+    final allAlarms = [...existingAlarms, ...newAlarms];
+    await _storageService.saveAlarms(allAlarms);
+
+    // UI 업데이트
+    await _loadAlarms();
+
+    // 완료 메시지
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${newAlarms.length}개의 알람이 등록되었습니다!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   String _formatTime(TimeOfDay time) {
@@ -331,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildRegButton(
                 icon: Icons.camera_alt,
                 label: '카메라로\n등록',
-                onTap: () => Navigator.pushNamed(context, '/camera'),
+                onTap: _navigateToCamera,
               ),
             ),
             const SizedBox(width: 16),
@@ -339,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildRegButton(
                 icon: Icons.mic,
                 label: '말로\n등록',
-                onTap: () => Navigator.pushNamed(context, '/voice'),
+                onTap: _navigateToVoice,
               ),
             ),
           ],

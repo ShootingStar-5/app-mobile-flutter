@@ -66,6 +66,10 @@ class AlarmStorageService {
       label: json['label'],
       time: TimeOfDay(hour: json['hour'], minute: json['minute']),
       isActive: json['isActive'] ?? true,
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : DateTime.now(),
+      durationDays: json['durationDays'] ?? 1,
     );
   }
 
@@ -77,6 +81,8 @@ class AlarmStorageService {
       'hour': alarm.time.hour,
       'minute': alarm.time.minute,
       'isActive': alarm.isActive,
+      'startDate': alarm.startDate.toIso8601String(),
+      'durationDays': alarm.durationDays,
     };
   }
 }
