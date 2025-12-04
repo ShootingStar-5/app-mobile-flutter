@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import '../utils/theme.dart';
 
@@ -17,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     _initializeVideo();
+    _startAutoNavigation();
   }
 
   Future<void> _initializeVideo() async {
@@ -27,6 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await _videoController.initialize();
       _videoController.setLooping(true);
+      _videoController.setVolume(0); // 소리 끄기
       _videoController.play();
 
       if (mounted) {
@@ -39,14 +42,20 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  void _startAutoNavigation() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+
+    // 시연용: 항상 온보딩부터 시작
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+    }
+  }
+
   @override
   void dispose() {
     _videoController.dispose();
     super.dispose();
-  }
-
-  void _startApp() {
-    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
@@ -58,11 +67,11 @@ class _SplashScreenState extends State<SplashScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
 
-              // 마스코트 비디오 (화면에 맞게 유동적 크기)
+              // 마스코트 비디오
               Expanded(
-                flex: 7,
+                flex: 40,
                 child: _isVideoInitialized
                     ? FittedBox(
                         fit: BoxFit.contain,
@@ -78,15 +87,16 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                       ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 10),
 
-              // 인사 텍스트
+              // 인사 텍스트 (약=노란색, 꼬박=파란색)
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
                   style: TextStyle(
+                    fontFamily: 'SUITE',
                     fontSize: 32,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     height: 1.3,
                   ),
                   children: [
@@ -95,8 +105,12 @@ class _SplashScreenState extends State<SplashScreen> {
                       style: TextStyle(color: AppColors.secondary),
                     ),
                     TextSpan(
-                      text: '약꼬박',
+                      text: '약',
                       style: TextStyle(color: AppColors.primary),
+                    ),
+                    TextSpan(
+                      text: '꼬박',
+                      style: TextStyle(color: AppColors.secondary),
                     ),
                     TextSpan(
                       text: '입니다',
@@ -105,59 +119,33 @@ class _SplashScreenState extends State<SplashScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
-              // 설명 카드
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Text(
-                  '약을 꼬박 꼬박 잘 챙겨먹을 수 있게\n도와드립니다!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
+              // 설명 텍스트
+              const Text(
+                '말로, 사진으로 쉽게 등록하는 약 알람',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SUITE',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 5),
 
-              // 시작하기 버튼
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: _startApp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    '시작하기',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
+              // 로딩 인디케이터
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
             ],
           ),
         ),

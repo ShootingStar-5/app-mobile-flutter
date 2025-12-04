@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yakkkobak_flutter/main.dart';
+import 'package:yakkobak_flutter/main.dart';
 
 void main() {
   testWidgets('Splash screen smoke test', (WidgetTester tester) async {
