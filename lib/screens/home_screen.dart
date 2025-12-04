@@ -13,41 +13,70 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToFaq});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final AlarmStorageService _storageService = AlarmStorageService();
   List<Alarm> _upcomingAlarms = [];
   bool _isLoading = true;
 
+  /// Public method to refresh alarms (called from MainShell on tab change)
+  void refreshAlarms() {
+    _loadAlarms();
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadAlarms();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadAlarms();
+    }
   }
 
   Future<void> _loadAlarms() async {
     final alarms = await _storageService.loadAlarms();
-    final now = TimeOfDay.now();
+    final now = DateTime.now();
+    final nowTime = TimeOfDay.now();
 
-    // Filter and sort alarms that are upcoming today
-    final upcoming = alarms.where((alarm) {
-      if (!alarm.isActive) return false;
-      final alarmMinutes = alarm.time.hour * 60 + alarm.time.minute;
-      final nowMinutes = now.hour * 60 + now.minute;
-      return alarmMinutes >= nowMinutes;
+    // Filter alarms that are active on today's date
+    final todayAlarms = alarms.where((alarm) {
+      return alarm.isActiveOnDate(now);
     }).toList();
 
-    upcoming.sort((a, b) {
+    // Sort by time, with upcoming alarms first
+    final nowMinutes = nowTime.hour * 60 + nowTime.minute;
+    todayAlarms.sort((a, b) {
       final aMinutes = a.time.hour * 60 + a.time.minute;
       final bMinutes = b.time.hour * 60 + b.time.minute;
+
+      // Check if alarm is upcoming (hasn't passed yet today)
+      final aUpcoming = aMinutes >= nowMinutes;
+      final bUpcoming = bMinutes >= nowMinutes;
+
+      // Upcoming alarms come first
+      if (aUpcoming && !bUpcoming) return -1;
+      if (!aUpcoming && bUpcoming) return 1;
+
+      // Within same category, sort by time
       return aMinutes.compareTo(bMinutes);
     });
 
     if (mounted) {
       setState(() {
-        _upcomingAlarms = upcoming.take(3).toList(); // Show max 3 upcoming
+        _upcomingAlarms = todayAlarms.take(3).toList(); // Show max 3
         _isLoading = false;
       });
     }

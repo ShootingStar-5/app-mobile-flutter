@@ -73,6 +73,8 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
           label: _alarmLabels[i],
           time: _alarmTimes[i],
           isActive: true,
+          startDate: DateTime.now(),
+          durationDays: widget.medicationData.totalDurationDays ?? 7,
         );
 
         await _storageService.addAlarm(alarm);
