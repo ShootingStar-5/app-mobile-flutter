@@ -6,13 +6,13 @@ class MedicationExtractService {
   // TODO: 실제 서버 IP로 변경하세요
   // 에뮬레이터: 10.0.2.2:8000
   // 실제 기기: 컴퓨터의 로컬 IP (예: 192.168.x.x:8000)
-  // USB 포트 포워딩: localhost:8000 (adb reverse 사용)
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl =
+      'https://app-backend-fastapi-h7bsa9aucfdfeuhk.westus3-01.azurewebsites.net/'; //'http://172.16.30.30:8000';
 
   /// 음성 파일에서 약 정보 추출
   Future<MedicationExtractResult> extractFromVoice(String wavFilePath) async {
     try {
-      final uri = Uri.parse('$baseUrl/api/extract/voice');
+      final uri = Uri.parse('${baseUrl}api/v1/stt/extract');
       var request = http.MultipartRequest('POST', uri);
       request.files.add(
         await http.MultipartFile.fromPath('audio', wavFilePath),
@@ -50,7 +50,7 @@ class MedicationExtractService {
   /// 텍스트에서 약 정보 추출 (테스트용)
   Future<MedicationExtractResult> extractFromText(String text) async {
     try {
-      final uri = Uri.parse('$baseUrl/api/extract/text');
+      final uri = Uri.parse('${baseUrl}api/v1/stt/extract-text');
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -87,7 +87,7 @@ class MedicationExtractService {
   /// 서버 상태 확인
   Future<bool> healthCheck() async {
     try {
-      final uri = Uri.parse('$baseUrl/api/stt/health');
+      final uri = Uri.parse('${baseUrl}api/v1/stt/health');
       final response = await http.get(uri);
       return response.statusCode == 200;
     } catch (e) {
