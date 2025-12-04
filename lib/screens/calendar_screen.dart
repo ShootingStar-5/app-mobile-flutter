@@ -8,16 +8,21 @@ class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  State<CalendarScreen> createState() => CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class CalendarScreenState extends State<CalendarScreen> {
   final AlarmStorageService _storageService = AlarmStorageService();
 
   DateTime _focusedMonth = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   List<Alarm> _alarms = [];
   bool _isLoading = true;
+
+  /// Public method to refresh alarms (called from MainShell on tab change)
+  void refreshAlarms() {
+    _loadAlarms();
+  }
 
   @override
   void initState() {
@@ -80,6 +85,49 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<Alarm> _getAlarmsForDay(DateTime day) {
     // 선택된 날짜에 해당하는 알람 목록 반환 (활성 여부 무시)
     return _alarms.where((alarm) => _isAlarmOnDate(alarm, day)).toList();
+  }
+
+  Future<void> _deleteAlarm(Alarm alarm) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '지우시겠습니까?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('${alarm.label} 알람을 삭제합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '아니오',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '네',
+              style: TextStyle(color: AppColors.error, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _storageService.deleteAlarm(alarm.id);
+      await _loadAlarms();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 알람이 삭제되었습니다.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _editAlarmTime(Alarm alarm) async {
@@ -355,7 +403,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (alarmsForDay.isEmpty)
           _buildEmptyState()
         else
-          ...alarmsForDay.map((alarm) => _buildAlarmCard(alarm, onEdit: () => _editAlarmTime(alarm))),
+          ...alarmsForDay.map((alarm) => _buildAlarmCard(
+            alarm,
+            onEdit: () => _editAlarmTime(alarm),
+            onDelete: () => _deleteAlarm(alarm),
+          )),
       ],
     );
   }
@@ -397,7 +449,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildAlarmCard(Alarm alarm, {VoidCallback? onEdit}) {
+  Widget _buildAlarmCard(Alarm alarm, {VoidCallback? onEdit, VoidCallback? onDelete}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -480,7 +532,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
 
-          // 알람 시간 수정 버튼
+          // Edit button (bigger)
           GestureDetector(
             onTap: onEdit,
             child: Container(
@@ -492,7 +544,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
               child: const Icon(
                 Icons.edit,
                 color: AppColors.secondary,
-                size: 28,
+                size: 24,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Delete button (smaller)
+          GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 18,
               ),
             ),
           ),
