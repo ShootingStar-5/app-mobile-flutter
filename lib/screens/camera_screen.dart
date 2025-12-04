@@ -63,7 +63,7 @@ class _CameraScreenState extends State<CameraScreen> {
       final image = await _controller!.takePicture();
 
       // 백엔드로 전송
-      final url = '${MedicationExtractService.baseUrl}/api/v1/ocr/extract-medication';
+      final url = '${MedicationExtractService.baseUrl}api/v1/ocr/extract-medication';
       final uri = Uri.parse(url);
       var request = http.MultipartRequest('POST', uri);
       request.files.add(await http.MultipartFile.fromPath('file', image.path));

@@ -2,16 +2,14 @@ import 'dart:async';
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:yakkobak_flutter/screens/main_shell.dart';
-import 'package:yakkobak_flutter/utils/theme.dart';
-
-import 'package:yakkobak_flutter/screens/splash_screen.dart';
-import 'package:yakkobak_flutter/screens/camera_screen.dart';
-import 'package:yakkobak_flutter/screens/voice_screen.dart';
-import 'package:yakkobak_flutter/screens/alarm_screen.dart';
-import 'package:yakkobak_flutter/screens/alarm_ringing_screen.dart';
-
-import 'package:yakkobak_flutter/services/notification_service.dart';
+import 'screens/main_shell.dart';
+import 'utils/theme.dart';
+import 'screens/splash_screen.dart';
+import 'screens/camera_screen.dart';
+import 'screens/voice_screen.dart';
+import 'screens/alarm_screen.dart';
+import 'screens/alarm_ringing_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

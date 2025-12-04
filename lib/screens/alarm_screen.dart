@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:yakkobak_flutter/models/alarm.dart';
-import 'package:yakkobak_flutter/services/notification_service.dart';
-import 'package:yakkobak_flutter/services/alarm_storage_service.dart';
+import '../models/alarm.dart';
+import '../services/notification_service.dart';
+import '../services/alarm_storage_service.dart';
 
 class AlarmScreen extends StatefulWidget {
   const AlarmScreen({super.key});
