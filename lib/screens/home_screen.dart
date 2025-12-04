@@ -13,41 +13,70 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToFaq});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final AlarmStorageService _storageService = AlarmStorageService();
   List<Alarm> _upcomingAlarms = [];
   bool _isLoading = true;
 
+  /// Public method to refresh alarms (called from MainShell on tab change)
+  void refreshAlarms() {
+    _loadAlarms();
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadAlarms();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadAlarms();
+    }
   }
 
   Future<void> _loadAlarms() async {
     final alarms = await _storageService.loadAlarms();
-    final now = TimeOfDay.now();
+    final now = DateTime.now();
+    final nowTime = TimeOfDay.now();
 
-    // Filter and sort alarms that are upcoming today
-    final upcoming = alarms.where((alarm) {
-      if (!alarm.isActive) return false;
-      final alarmMinutes = alarm.time.hour * 60 + alarm.time.minute;
-      final nowMinutes = now.hour * 60 + now.minute;
-      return alarmMinutes >= nowMinutes;
+    // Filter alarms that are active on today's date
+    final todayAlarms = alarms.where((alarm) {
+      return alarm.isActiveOnDate(now);
     }).toList();
 
-    upcoming.sort((a, b) {
+    // Sort by time, with upcoming alarms first
+    final nowMinutes = nowTime.hour * 60 + nowTime.minute;
+    todayAlarms.sort((a, b) {
       final aMinutes = a.time.hour * 60 + a.time.minute;
       final bMinutes = b.time.hour * 60 + b.time.minute;
+
+      // Check if alarm is upcoming (hasn't passed yet today)
+      final aUpcoming = aMinutes >= nowMinutes;
+      final bUpcoming = bMinutes >= nowMinutes;
+
+      // Upcoming alarms come first
+      if (aUpcoming && !bUpcoming) return -1;
+      if (!aUpcoming && bUpcoming) return 1;
+
+      // Within same category, sort by time
       return aMinutes.compareTo(bMinutes);
     });
 
     if (mounted) {
       setState(() {
-        _upcomingAlarms = upcoming.take(3).toList(); // Show max 3 upcoming
+        _upcomingAlarms = todayAlarms.take(3).toList(); // Show max 3
         _isLoading = false;
       });
     }
@@ -183,6 +212,87 @@ class _HomeScreenState extends State<HomeScreen> {
     return '$period $displayHour:$minute';
   }
 
+  Future<void> _editAlarmTime(Alarm alarm) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: alarm.time,
+      helpText: '${alarm.label} 시간 설정',
+      cancelText: '취소',
+      confirmText: '확인',
+    );
+
+    if (picked != null && picked != alarm.time) {
+      alarm.time = picked;
+      await _storageService.updateAlarm(alarm);
+
+      // 알람 재스케줄링
+      if (alarm.isActive) {
+        await NotificationService().scheduleAlarm(
+          id: alarm.id,
+          title: '약 드실 시간입니다!',
+          body: '${alarm.label}을(를) 복용해주세요.',
+          time: alarm.time,
+        );
+      }
+
+      await _loadAlarms();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 시간이 변경되었습니다.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAlarm(Alarm alarm) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '지우시겠습니까?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('${alarm.label} 알람을 삭제합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '아니오',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '네',
+              style: TextStyle(color: AppColors.error, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await NotificationService().cancelAlarm(alarm.id);
+      await _storageService.deleteAlarm(alarm.id);
+      await _loadAlarms();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alarm.label} 알람이 삭제되었습니다.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = DateFormat('M월 d일 EEEE', 'ko_KR').format(DateTime.now());
@@ -289,13 +399,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            TextButton(
-              onPressed: () => Navigator.pushNamed(context, '/alarms'),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/alarms').then((_) => _loadAlarms());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text(
-                '전체 보기',
+                '알람 전체 보기',
                 style: TextStyle(
-                  color: AppColors.secondary,
-                  fontSize: 16,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -411,6 +531,40 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+          // Edit button (bigger)
+          GestureDetector(
+            onTap: () => _editAlarmTime(alarm),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.edit,
+                color: AppColors.secondary,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Delete button (smaller)
+          GestureDetector(
+            onTap: () => _deleteAlarm(alarm),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(

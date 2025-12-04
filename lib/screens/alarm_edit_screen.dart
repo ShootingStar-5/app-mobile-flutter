@@ -56,6 +56,43 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
     }
   }
 
+  Future<void> _confirmDeleteAlarm(int index) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '지우시겠습니까?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('${_alarmLabels[index]} 알람을 삭제합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '아니오',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '네',
+              style: TextStyle(color: AppColors.error, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _alarmTimes.removeAt(index);
+        _alarmLabels.removeAt(index);
+      });
+    }
+  }
+
   Future<void> _saveAlarms() async {
     setState(() {
       _isSaving = true;
@@ -73,6 +110,8 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
           label: _alarmLabels[i],
           time: _alarmTimes[i],
           isActive: true,
+          startDate: DateTime.now(),
+          durationDays: widget.medicationData.totalDurationDays ?? 7,
         );
 
         await _storageService.addAlarm(alarm);
@@ -353,16 +392,37 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
+                  // Edit button (bigger)
+                  GestureDetector(
+                    onTap: () => _editTime(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: AppColors.secondary,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: AppColors.secondary,
-                      size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  // Delete button (smaller)
+                  GestureDetector(
+                    onTap: () => _confirmDeleteAlarm(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: AppColors.error,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ],
