@@ -24,11 +24,14 @@ class AlarmTimeCalculator {
       return alarms;
     }
 
-    // 식사 기준 알람
-    final meals = ['breakfast', 'lunch', 'dinner'];
+    // 식사 기준 알람 - specificMeals가 있으면 그것을 사용
+    final meals = data.specificMeals ?? ['breakfast', 'lunch', 'dinner'];
+    final mealsToUse = data.specificMeals != null
+        ? meals // specificMeals가 있으면 그대로 사용
+        : meals.take(frequency).toList(); // 없으면 frequency 만큼만 사용
 
-    for (int i = 0; i < frequency && i < meals.length; i++) {
-      final mealTime = defaultMealTimes[meals[i]]!;
+    for (int i = 0; i < mealsToUse.length; i++) {
+      final mealTime = defaultMealTimes[mealsToUse[i]]!;
       TimeOfDay alarmTime;
 
       if (isPostMeal) {
@@ -65,18 +68,40 @@ class AlarmTimeCalculator {
     );
   }
 
+  /// 영어 식사명을 한글로 변환
+  static String _getMealNameKorean(String mealKey) {
+    switch (mealKey) {
+      case 'breakfast':
+        return '아침';
+      case 'lunch':
+        return '점심';
+      case 'dinner':
+        return '저녁';
+      default:
+        return mealKey;
+    }
+  }
+
   /// 알람 라벨 생성
   static String generateLabel(MedicationData data, int index) {
     final name = data.medicationName ?? '약';
-    final mealNames = ['아침', '점심', '저녁'];
 
     if (data.mealContext == 'at_bedtime') {
       return '$name (취침 전)';
     }
 
-    if (index < mealNames.length) {
+    // specificMeals가 있으면 그것을 사용
+    if (data.specificMeals != null && index < data.specificMeals!.length) {
       final mealContext = data.getMealContextKorean();
-      return '$name (${mealNames[index]} $mealContext)';
+      final mealName = _getMealNameKorean(data.specificMeals![index]);
+      return '$name ($mealName $mealContext)';
+    }
+
+    // 기본값: 순서대로 아침, 점심, 저녁
+    final defaultMealNames = ['아침', '점심', '저녁'];
+    if (index < defaultMealNames.length) {
+      final mealContext = data.getMealContextKorean();
+      return '$name (${defaultMealNames[index]} $mealContext)';
     }
 
     return '$name (${index + 1}회차)';

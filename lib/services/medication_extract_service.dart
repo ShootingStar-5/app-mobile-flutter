@@ -23,10 +23,11 @@ class MedicationExtractService {
       var json = jsonDecode(responseBody);
 
       if (json['success'] == true && json['data'] != null) {
+        final sttText = json['stt_text'] ?? '';
         return MedicationExtractResult(
           success: true,
-          sttText: json['stt_text'] ?? '',
-          data: MedicationData.fromJson(json['data']),
+          sttText: sttText,
+          data: MedicationData.fromJsonWithSttParsing(json['data'], sttText),
           message: json['message'] ?? '성공',
         );
       } else {
@@ -60,10 +61,11 @@ class MedicationExtractService {
       var json = jsonDecode(response.body);
 
       if (json['success'] == true && json['data'] != null) {
+        final sttText = json['input_text'] ?? text;
         return MedicationExtractResult(
           success: true,
-          sttText: json['input_text'] ?? text,
-          data: MedicationData.fromJson(json['data']),
+          sttText: sttText,
+          data: MedicationData.fromJsonWithSttParsing(json['data'], sttText),
           message: json['message'] ?? '성공',
         );
       } else {
