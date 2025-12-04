@@ -65,15 +65,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   bool _hasAlarms(DateTime day) {
-    // 현재는 등록된 알람이 있으면 모든 날에 표시
-    // 실제로는 복용 기록 데이터가 필요
-    return _alarms.isNotEmpty;
+    // 해당 날짜에 활성화된 알람이 있는지 확인
+    return _alarms.any((alarm) => alarm.isActiveOnDate(day));
   }
 
   List<Alarm> _getAlarmsForDay(DateTime day) {
-    // 선택된 날의 알람 목록 반환
-    // 현재는 활성화된 모든 알람 표시
-    return _alarms.where((a) => a.isActive).toList();
+    // 선택된 날짜에 활성화된 알람 목록 반환
+    return _alarms.where((alarm) => alarm.isActiveOnDate(day)).toList();
+  }
+
+  Future<void> _toggleAlarm(Alarm alarm) async {
+    alarm.isActive = !alarm.isActive;
+    await _storageService.updateAlarm(alarm);
+    await _loadAlarms();
   }
 
   @override
@@ -311,7 +315,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (alarmsForDay.isEmpty)
           _buildEmptyState()
         else
-          ...alarmsForDay.map((alarm) => _buildAlarmCard(alarm)),
+          ...alarmsForDay.map((alarm) => _buildAlarmCard(alarm, onToggle: () => _toggleAlarm(alarm))),
       ],
     );
   }
@@ -353,7 +357,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildAlarmCard(Alarm alarm) {
+  Widget _buildAlarmCard(Alarm alarm, {VoidCallback? onToggle}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -436,17 +440,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
 
-          // 복용 체크 버튼 (데모용)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.check_circle_outline,
-              color: AppColors.secondary,
-              size: 28,
+          // 알람 켜기/끄기 토글 버튼
+          GestureDetector(
+            onTap: onToggle,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: alarm.isActive
+                    ? AppColors.success.withValues(alpha: 0.2)
+                    : AppColors.textLight.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                alarm.isActive ? Icons.alarm_on : Icons.alarm_off,
+                color: alarm.isActive ? AppColors.success : AppColors.textLight,
+                size: 28,
+              ),
             ),
           ),
         ],
